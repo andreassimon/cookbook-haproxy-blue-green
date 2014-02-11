@@ -1,0 +1,45 @@
+global
+  log 127.0.0.1   local0
+  log 127.0.0.1   local1 notice
+  #log loghost    local0 info
+  maxconn <%= node['haproxy']['global_max_connections'] %>
+  #debug
+  #quiet
+  user <%= node['haproxy']['user'] %>
+  group <%= node['haproxy']['group'] %>
+<% if node['haproxy']['enable_stats_socket'] -%>
+  stats socket <%= node['haproxy']['stats_socket_path'] %> user <%= node['haproxy']['stats_socket_user'] %> group <%= node['haproxy']['stats_socket_group'] %>
+<% end -%>
+
+defaults
+  log     global
+  mode    http
+  retries 3
+<% @defaults_timeouts.sort.map do | value, time | -%>
+  timeout <%= value %> <%= time %>
+<% end -%>
+<% @defaults_options.sort.each do | option | -%>
+  option <%= option %>
+<% end -%>
+  balance  <%= node['haproxy']['balance_algorithm'] %>
+
+# Set up application listeners here.
+
+frontend http
+    maxconn 2000
+    bind 0.0.0.0:80
+<% if @active_zone == 'blue' -%>
+    default_backend servers-http-blue
+    # default_backend servers-http-green
+<% else -%>
+    # default_backend servers-http-blue
+    default_backend servers-http-green
+<% end -%>
+
+# Setup blue partition here
+backend servers-http-blue
+    server localhost 127.0.0.1:<%= @blue_http_port %> weight 1 maxconn 100 check
+
+# Setup green partition here
+backend servers-http-green
+    server localhost 127.0.0.1:<%= @green_http_port %> weight 1 maxconn 100 check
