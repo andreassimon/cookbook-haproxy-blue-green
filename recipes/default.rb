@@ -28,8 +28,8 @@ include_recipe "haproxy::default"
     notifies :reload, "service[haproxy]"
     variables(
       :active_zone => env,
-      :blue_http_port => node["tomcat"]["blue_http_port"],
-      :green_http_port => node["tomcat"]["green_http_port"],
+      :blue_http_port => node["tomcat"]["blue"]["http_port"],
+      :green_http_port => node["tomcat"]["green"]["http_port"],
       :defaults_options => haproxy_defaults_options,
       :defaults_timeouts => haproxy_defaults_timeouts
     )
